@@ -5,7 +5,7 @@ import org.example.expert.config.JwtUtil;
 import org.example.expert.config.PasswordEncoder;
 import org.example.expert.domain.auth.dto.request.SigninRequest;
 import org.example.expert.domain.auth.dto.request.SignupRequest;
-import org.example.expert.domain.auth.dto.response.SigninResponse;
+import org.example.expert.domain.auth.dto.response.SignInResponse;
 import org.example.expert.domain.auth.dto.response.SignupResponse;
 import org.example.expert.domain.auth.exception.AuthException;
 import org.example.expert.domain.common.exception.InvalidRequestException;
@@ -35,7 +35,6 @@ public class AuthService {
 
         UserRole userRole = UserRole.of(signupRequest.getUserRole());
 
-
         User newUser = new User(
                 signupRequest.getEmail(),
                 encodedPassword,
@@ -43,12 +42,10 @@ public class AuthService {
         );
         User savedUser = userRepository.save(newUser);
 
-        String bearerToken = jwtUtil.createToken(savedUser.getId(), savedUser.getEmail(), userRole);
-
-        return new SignupResponse(bearerToken);
+        return new SignupResponse(createToken(savedUser));
     }
 
-    public SigninResponse signin(SigninRequest signinRequest) {
+    public SignInResponse signIn(SigninRequest signinRequest) {
         User user = userRepository.findByEmail(signinRequest.getEmail()).orElseThrow(
                 () -> new InvalidRequestException("가입되지 않은 유저입니다."));
 
@@ -57,8 +54,10 @@ public class AuthService {
             throw new AuthException("잘못된 비밀번호입니다.");
         }
 
-        String bearerToken = jwtUtil.createToken(user.getId(), user.getEmail(), user.getUserRole());
+        return new SignInResponse(createToken(user));
+    }
 
-        return new SigninResponse(bearerToken);
+    private String createToken(User user) {
+        return jwtUtil.createToken(user.getId(), user.getEmail(), user.getUserRole());
     }
 }
